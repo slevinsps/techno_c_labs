@@ -20,8 +20,6 @@ runId 332
 # include "stdbool.h"
 
 #define STRING_SIZE 50
-#define ASCII_NUMBER_FIRST 47
-#define ASCII_NUMBER_LAST 58
 #define DEC_BASE 10
 #define LOW_BORDER_BASE 2
 #define HIGH_BORDER_BASE 36
