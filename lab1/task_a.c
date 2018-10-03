@@ -27,8 +27,7 @@ runId 332
 #define HIGH_BORDER_BASE 36
 
 #define OK 0
-#define ERROR_SCANF -1
-#define ERROR_CONVERTER -2
+#define ERROR -1
 
 int ret_digit_from_symbol(char c);
 
@@ -38,35 +37,36 @@ void reverse_string(char *s);
 
 bool correct_input(const int notation, const char *s);
 
-long long int converter_to_dec(int p, char *s);
+size_t converter_to_dec(int p, char *s);
 
 char *converter(int p, int q, char *s);
 
 int main(void) {
-    int p = 0;
-    int q = 0;
-    char *s = (char *)calloc(STRING_SIZE, sizeof(char));
-	if (!s)
+    int base_from = 0;
+    int base_to = 0;
+    char *string = (char*)calloc(STRING_SIZE, sizeof(char));
+	if (!string){
 		return 0;
-    int err = OK;
+	}
+    int result = OK;
     char *ans = NULL;
-    if (scanf("%d %d %s", &p, &q, s) == 3) { // from p to q
-        ans = converter(p, q, s);
+    if (scanf("%d %d %s", &base_from, &base_to, string) == 3) { // from p to q
+        ans = converter(base_from, base_to, string);
         if (!ans) {
-            err = ERROR_CONVERTER;
+            result = ERROR;
 		}
     } else {
-        err = ERROR_SCANF;
+        result = ERROR;
 	}
 
-    if (err == OK)
+    if (result == OK)
     {
         printf("%s", ans);
     }
     else
         printf("[error]");
 
-    free(s);
+    free(string);
     free(ans);
     return 0;
 }
@@ -114,7 +114,7 @@ void reverse_string(char *string) {
 
 bool correct_input(const int base, const char *string) {
 	if ((!string)||(base < 0)) {
-		return ERROR_CONVERTER;
+		return ERROR;
 	}
 		
     size_t len = strlen(string);
@@ -129,15 +129,15 @@ bool correct_input(const int base, const char *string) {
     return result;
 }
 
-long long int converter_to_dec(int base, char *string) {
+size_t converter_to_dec(int base, char *string) {
     assert(base >= LOW_BORDER_BASE);
 	
 	if ((!string)||(base < LOW_BORDER_BASE)) {
-		return ERROR_CONVERTER;
+		return ERROR;
 	}
 	
     size_t len_str = strlen(string);
-    long long int dec_ss = 0;
+    size_t dec_ss = 0;
     for (size_t i = 0; i < len_str; i++) {
         dec_ss += ret_digit_from_symbol(string[len_str - 1 - i]) *
 		pow(base, i);
@@ -152,7 +152,7 @@ char *converter(int base_from, int base_to, char *string) {
         return NULL;
     }
 
-    long long int dec_ss = converter_to_dec(base_from, string);
+    size_t dec_ss = converter_to_dec(base_from, string);
 
     char *ans = (char *)calloc(STRING_SIZE, sizeof(char));
 	if (!ans) {
@@ -160,17 +160,17 @@ char *converter(int base_from, int base_to, char *string) {
 	}
 	
     size_t i = 0;
-	int error = OK;
+	int result = OK;
     do {
         ans[i] = ret_symbol_from_digit(dec_ss % base_to);
 		if (ans[i++] == ' '){
-			error = ERROR_CONVERTER;
+			result = ERROR;
 			break;
 		}
         dec_ss = dec_ss / base_to;
     } while (dec_ss != 0);
 	
-	if (error == ERROR_CONVERTER) {
+	if (result == ERROR) {
 		free(ans);
 		return NULL;
 	}
