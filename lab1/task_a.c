@@ -5,28 +5,24 @@ Memory limit:	64 M
 Составить программу для перевода чисел из системы счисления по основанию P в систему счисления по основанию Q, где 2 меньше или равно Q меньше P меньше или равно 36. 
 Значения P, Q и строковое представление S числа в исходной системе счисления вводятся с клавиатуры в следующем порядке: 
 P Q S 
-
 S не выходит за границы size_t. 
-
 Процедура перевода не может использовать соответствующей функции системной библиотеки и должна быть оформлена в виде отдельной функции, на вход которой подаются значения P, Q и S, размещенные в динамической памяти. 
 На выход функция должна возвращать строковое представление S1 числа в целевой системе счисления. 
-
 runId 332
 */
+
 
 # include "stdio.h"
 # include "stdlib.h"
 # include "string.h"
 # include "math.h"
 # include "assert.h"
+# include "stdbool.h"
 
 #define STRING_SIZE 50
 #define ASCII_NUMBER_FIRST 47
 #define ASCII_NUMBER_LAST 58
-#define ASCII_BIG_LETTER_FIRST 65
-#define ASCII_BIG_LETTER_LAST 90
-#define ASCII_DIST_BETWEEN_BIG_SMALL_LETTER 32
-#define MAIN_BASE 10
+#define DEC_BASE 10
 #define LOW_BORDER_BASE 2
 #define HIGH_BORDER_BASE 36
 
@@ -34,95 +30,37 @@ runId 332
 #define ERROR_SCANF -1
 #define ERROR_CONVERTER -2
 
-int ret_number(char c) {
-    //assert((c <= 'Z' && c >= 'A') || (c <= 'z' && c >= 'a') || (c <= '9' && c >= '0'));
-    if (c < ASCII_NUMBER_LAST && c > ASCII_NUMBER_FIRST)
-        return c - '0';
-    if (c > ASCII_BIG_LETTER_LAST)
-        c -= ASCII_DIST_BETWEEN_BIG_SMALL_LETTER;
-    return (c - 'A' + MAIN_BASE);
-}
+int ret_digit_from_symbol(char c);
 
-char ret_char(int n) {
-    assert(n < MAIN_BASE && n >= 0);
-    char c = ' ';
-    if (n < MAIN_BASE) {
-        c = '0' + n;
-    } else {
-        c = 'A' + (n - MAIN_BASE);
-    }
-    return c;
-}
+char ret_symbol_from_digit(const int n);
 
-void reverse_string(char *s) {
-    int len = (int)strlen(s);
-    int mid = len / 2;
-    int i = 0;
-    while (i < mid) {
-        char tmp = s[i];
-        s[i] = s[len - 1 - i];
-        s[len - 1 - i] = tmp;
-        i++;
-    }
-}
+void reverse_string(char *s);
 
-int correct_input(int p, char *s) {
-    int len = (int)strlen(s);
-    int err = OK;
-    for(int i = 0; i < len; i++) {
-        if (ret_number(s[i]) >= p || ret_number(s[i]) < 0) {
-            err = ERROR_CONVERTER;
-            break;
-        }
-    }
-    return err;
-}
+bool correct_input(const int notation, const char *s);
 
-long long int converter_to_dec(int p, char *s) {
-    assert(p >= 2);
-    int len_str = strlen(s);
-    long long int dec_ss = 0;
-    for (int i = 0; i < len_str; i++) {
-        dec_ss += ret_number(s[len_str - 1 - i]) * pow(p, i);
-    }
-    return dec_ss;
-}
+long long int converter_to_dec(int p, char *s);
 
-char *converter(int p, int q, char *s) {
-    if (q < LOW_BORDER_BASE || q >= p ||
-        p > HIGH_BORDER_BASE || correct_input(p, s) == ERROR_CONVERTER) {
-        return NULL;
-    }
-
-    long long int dec_ss = converter_to_dec(p, s);
-
-    char *ans = (char *)calloc(STRING_SIZE, sizeof(char));;
-    int i = 0;
-    do {
-        ans[i++] = ret_char(dec_ss % q);
-        dec_ss = dec_ss / q;
-    } while (dec_ss != 0);
-    ans[i] = '\0';
-
-    reverse_string(ans);
-
-    return ans;
-}
+char *converter(int p, int q, char *s);
 
 int main(void) {
-    int p;
-    int q;
+    int p = 0;
+    int q = 0;
     char *s = (char *)calloc(STRING_SIZE, sizeof(char));
+	if (!s)
+		return 0;
     int err = OK;
     char *ans = NULL;
     if (scanf("%d %d %s", &p, &q, s) == 3) { // from p to q
         ans = converter(p, q, s);
-        if (!ans)
+        if (!ans) {
             err = ERROR_CONVERTER;
-    } else
+		}
+    } else {
         err = ERROR_SCANF;
+	}
 
-    if (err == OK) {
+    if (err == OK)
+    {
         printf("%s", ans);
     }
     else
@@ -131,4 +69,115 @@ int main(void) {
     free(s);
     free(ans);
     return 0;
+}
+
+int ret_digit_from_symbol(char symbol) {
+    if (symbol <= '9' && symbol >= '0'){
+        return symbol - '0';
+	}
+    if (symbol > 'Z'){
+        symbol -= ('a' - 'A');
+	}
+    return (symbol - 'A' + DEC_BASE);
+}
+
+char ret_symbol_from_digit(const int number) {
+	if ((number >= DEC_BASE) || (number < 0)) {
+		return ' ';
+	}
+	
+    char symbol = ' ';
+    if (number < DEC_BASE) {
+        symbol = '0' + number;
+    } else {
+        symbol = 'A' + (number - DEC_BASE);
+    }
+    return symbol;
+}
+
+void reverse_string(char *string) {
+	if (!string){
+		return;
+	}
+	
+    size_t len = strlen(string);
+    size_t mid = len / 2;
+    size_t i = 0;
+	char tmp = ' ';
+    while (i < mid) {
+        tmp = string[i];
+        string[i] = string[len - 1 - i];
+        string[len - 1 - i] = tmp;
+        i++;
+    }
+}
+
+bool correct_input(const int base, const char *string) {
+	if ((!string)||(base < 0)) {
+		return ERROR_CONVERTER;
+	}
+		
+    size_t len = strlen(string);
+    bool result = true;
+    for(size_t i = 0; i < len; i++) {
+        if (ret_digit_from_symbol(string[i]) >= base ||
+		ret_digit_from_symbol(string[i]) < 0) {
+            result = false;
+            break;
+        }
+    }
+    return result;
+}
+
+long long int converter_to_dec(int base, char *string) {
+    assert(base >= LOW_BORDER_BASE);
+	
+	if ((!string)||(base < LOW_BORDER_BASE)) {
+		return ERROR_CONVERTER;
+	}
+	
+    size_t len_str = strlen(string);
+    long long int dec_ss = 0;
+    for (size_t i = 0; i < len_str; i++) {
+        dec_ss += ret_digit_from_symbol(string[len_str - 1 - i]) *
+		pow(base, i);
+    }
+    return dec_ss;
+}
+
+char *converter(int base_from, int base_to, char *string) {
+    if (base_to < LOW_BORDER_BASE || base_to >= base_from ||
+        base_from > HIGH_BORDER_BASE ||
+		!correct_input(base_from, string)) {
+        return NULL;
+    }
+
+    long long int dec_ss = converter_to_dec(base_from, string);
+
+    char *ans = (char *)calloc(STRING_SIZE, sizeof(char));
+	if (!ans) {
+		return NULL;
+	}
+	
+    size_t i = 0;
+	int error = OK;
+    do {
+        ans[i] = ret_symbol_from_digit(dec_ss % base_to);
+		if (ans[i++] == ' '){
+			error = ERROR_CONVERTER;
+			break;
+		}
+        dec_ss = dec_ss / base_to;
+    } while (dec_ss != 0);
+	
+	if (error == ERROR_CONVERTER) {
+		free(ans);
+		return NULL;
+	}
+	
+    ans[i] = '\0';
+
+    reverse_string(ans);
+
+    return ans;
 }
