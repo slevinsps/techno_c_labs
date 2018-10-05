@@ -49,24 +49,25 @@ int main(void) {
     int base_to = 0;
     char *string = (char *)calloc(STRING_SIZE, sizeof(char));
     if (!string) {
-        printf("Memory error\n");
+        printf("[error]");
         return 0;
     }
-    int result = OK;
+    int res_code = OK;
     char *ans = NULL;
     if (scanf("%d %d %s", &base_from, &base_to, string) == 3) {  // from p to q
         ans = converter(base_from, base_to, string);
         if (!ans) {
-            result = ERROR;
+            res_code = ERROR;
         }
     } else {
-        result = ERROR;
+        res_code = ERROR;
     }
 
-    if (result == OK) {
+    if (res_code == OK) {
         printf("%s", ans);
-    } else
+    } else {
         printf("[error]");
+    }
 
     free(string);
     free(ans);
