@@ -22,15 +22,16 @@ Memory limit:	64 M
 
 run Id 349
 */
-# include "stdio.h"
-# include "stdlib.h"
-# include "string.h"
-# include "math.h"
-# include "ctype.h"
 
-# define TOKEN_SIZE 20
-# define NUMBER_SIZE 20
-# define NUMBER_OPERATION 6
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "math.h"
+#include "ctype.h"
+
+#define TOKEN_SIZE 20
+#define NUMBER_SIZE 20
+#define NUMBER_OPERATION 6
 
 typedef struct tree_node_s {
     char *token;
@@ -44,7 +45,104 @@ typedef struct dict_s {
     char *val;
 } dict;
 
+char *read_token(char **input);
+tree_node *read_simple_expression(char **input);
+int get_priority(char * binary_op);
 tree_node *read_expression(int min_priority, char **input);
+int resolve(tree_node *root);
+int check_name(char *name);
+int read_var(char *strings, dict *dictionary, int *k);
+void free_tree(tree_node * node);
+int check_str(char *str);
+
+int main(void)
+{
+    setbuf(stdout,NULL);
+    char *arr_strings[100];
+    dict *dictionary = (dict *)calloc(100,sizeof(dict));
+    tree_node * root = NULL;
+    char *main_str_copy = NULL;
+
+    int count_arr = -1;
+	// чтение
+    do {
+        count_arr += 1;
+        arr_strings[count_arr] = (char* )calloc(100, sizeof(char));
+        gets(arr_strings[count_arr]);
+
+    }while(strlen(arr_strings[count_arr]) != 0);
+
+    if (count_arr == 0) {
+        printf("[error]");
+        free(dictionary);
+        return 0;
+    }
+
+    int err = 0;
+    int ind_dictionary = 0;
+	// занесение в словарь
+    for(int i = 0; i < count_arr - 1; i++) {
+        err = read_var(arr_strings[i], dictionary, &ind_dictionary);
+        if (err == -1)
+            break;
+    }
+    if (err == -1) {
+        printf("[error]");
+    }
+    else
+    {
+        char *input_string = arr_strings[count_arr - 1];//"isdog or (not iscat and isdog) or True xor isdog";
+        char *main_str = (char* )malloc(100 * sizeof(char));
+        main_str_copy = main_str;
+        int w = 0;
+		// замена переменных
+        while(strlen(input_string) != 0) {
+            for(int i = 0; i < ind_dictionary; i++) {
+                if (strncmp(input_string, dictionary[i].name, strlen(dictionary[i].name)) == 0) {
+                    input_string += strlen(dictionary[i].name);
+                    memcpy(main_str + w, dictionary[i].val, strlen(dictionary[i].val));
+                    w+=strlen(dictionary[i].val);
+                    break;
+                }
+            }
+            main_str[w++] = *input_string++;
+        }
+        main_str[w] = 0;
+
+        if (check_str(main_str) == -1) {
+            printf("[error]");
+        }
+        else
+        {
+            root = read_expression(0, &main_str);
+            if (root) {
+                int res = resolve(root);
+                if (res == 1)
+                    printf("True");
+                else if (res == 0)
+                    printf("False");
+                else
+                    printf("[error]");
+            } else
+                printf("[error]");
+        }
+    }
+
+	// 
+    for(int i = 0; i <= count_arr; i++) {
+        free(arr_strings[i]);
+    }
+	// очистка словаря
+    for(int i = 0; i < ind_dictionary; i++) {
+        free(dictionary[i].name);
+        free(dictionary[i].val);
+    }
+    free(dictionary);
+    free_tree(root);
+    free(main_str_copy);
+
+    return 0;
+}
 
 // чтение одного компонента выражения (операция или значение True или False)
 char *read_token(char **input) 
@@ -276,96 +374,6 @@ int check_str(char *str)
         if  (strlen(input) == len1)
             return -1;
     }
-
-    return 0;
-}
-
-
-int main(void)
-{
-    setbuf(stdout,NULL);
-    char *arr_strings[100];
-    dict *dictionary = (dict *)calloc(100,sizeof(dict));
-    tree_node * root = NULL;
-    char *main_str_copy = NULL;
-
-    int count_arr = -1;
-	// чтение
-    do {
-        count_arr += 1;
-        arr_strings[count_arr] = (char* )calloc(100, sizeof(char));
-        gets(arr_strings[count_arr]);
-
-    }while(strlen(arr_strings[count_arr]) != 0);
-
-    if (count_arr == 0) {
-        printf("[error]");
-        free(dictionary);
-        return 0;
-    }
-
-    int err = 0;
-    int ind_dictionary = 0;
-	// занесение в словарь
-    for(int i = 0; i < count_arr - 1; i++) {
-        err = read_var(arr_strings[i], dictionary, &ind_dictionary);
-        if (err == -1)
-            break;
-    }
-    if (err == -1) {
-        printf("[error]");
-    }
-    else
-    {
-        char *input_string = arr_strings[count_arr - 1];//"isdog or (not iscat and isdog) or True xor isdog";
-        char *main_str = (char* )malloc(100 * sizeof(char));
-        main_str_copy = main_str;
-        int w = 0;
-		// замена переменных
-        while(strlen(input_string) != 0) {
-            for(int i = 0; i < ind_dictionary; i++) {
-                if (strncmp(input_string, dictionary[i].name, strlen(dictionary[i].name)) == 0) {
-                    input_string += strlen(dictionary[i].name);
-                    memcpy(main_str + w, dictionary[i].val, strlen(dictionary[i].val));
-                    w+=strlen(dictionary[i].val);
-                    break;
-                }
-            }
-            main_str[w++] = *input_string++;
-        }
-        main_str[w] = 0;
-
-        if (check_str(main_str) == -1) {
-            printf("[error]");
-        }
-        else
-        {
-            root = read_expression(0, &main_str);
-            if (root) {
-                int res = resolve(root);
-                if (res == 1)
-                    printf("True");
-                else if (res == 0)
-                    printf("False");
-                else
-                    printf("[error]");
-            } else
-                printf("[error]");
-        }
-    }
-
-	// занесение в словарь
-    for(int i = 0; i <= count_arr; i++) {
-        free(arr_strings[i]);
-    }
-	// занесение в словарь
-    for(int i = 0; i < ind_dictionary; i++) {
-        free(dictionary[i].name);
-        free(dictionary[i].val);
-    }
-    free(dictionary);
-    free_tree(root);
-    free(main_str_copy);
 
     return 0;
 }
