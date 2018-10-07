@@ -17,12 +17,12 @@ S не выходит за границы size_t.
 runId 332
 */
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "math.h"
-#include "assert.h"
-#include "stdbool.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <assert.h>
+#include <stdbool.h>
 
 #define STRING_SIZE 50
 #define DEC_BASE 10
@@ -142,7 +142,7 @@ size_t converter_to_dec(const int base, const char *string) {
     size_t len_str = strlen(string);
     size_t answer = 0;
     for (size_t i = 0; i < len_str; i++) {
-        answer += get_dec_digit_from_symbol(string[len_str - 1 - i]) * pow(base, i);
+        answer += get_dec_digit_from_symbol(string[len_str - 1 - i]) * pow((double)base, (double)i);
     }
     return answer;
 }
