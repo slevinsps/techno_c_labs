@@ -29,6 +29,9 @@ run Id 349
 #include "math.h"
 #include "ctype.h"
 
+#define SIZE_ARR_STRINGS 100
+#define SIZE_DICTIONARY 100
+#define SIZE_STRING 100
 #define TOKEN_SIZE 20
 #define NUMBER_SIZE 20
 #define NUMBER_OPERATION 6
@@ -55,22 +58,29 @@ int read_var(char *strings, dict *dictionary, int *k);
 void free_tree(tree_node * node);
 int check_str(char *str);
 
+
+void read_arr_strings(int *count_arr, char *arr_strings[100])
+{
+    do {
+        (*count_arr) += 1;
+        arr_strings[*count_arr] = (char* )calloc(SIZE_STRING, sizeof(char));
+        gets(arr_strings[*count_arr]);
+
+    } while(strlen(arr_strings[*count_arr]) != 0);
+}
+
+
 int main(void)
 {
     setbuf(stdout,NULL);
-    char *arr_strings[100];
-    dict *dictionary = (dict *)calloc(100,sizeof(dict));
+    char *arr_strings[SIZE_ARR_STRINGS];
+    dict *dictionary = (dict *)calloc(SIZE_DICTIONARY,sizeof(dict));
     tree_node * root = NULL;
     char *main_str_copy = NULL;
 
     int count_arr = -1;
 	// чтение
-    do {
-        count_arr += 1;
-        arr_strings[count_arr] = (char* )calloc(100, sizeof(char));
-        gets(arr_strings[count_arr]);
-
-    }while(strlen(arr_strings[count_arr]) != 0);
+    read_arr_strings(&count_arr, arr_strings);
 
     if (count_arr == 0) {
         printf("[error]");
@@ -92,7 +102,7 @@ int main(void)
     else
     {
         char *input_string = arr_strings[count_arr - 1];//"isdog or (not iscat and isdog) or True xor isdog";
-        char *main_str = (char* )malloc(100 * sizeof(char));
+        char *main_str = (char* )malloc(SIZE_STRING * sizeof(char));
         main_str_copy = main_str;
         int w = 0;
 		// замена переменных
