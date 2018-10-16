@@ -20,7 +20,7 @@ Memory limit:	64 M
 
 Если выражение или объявление не удовлетворяют описанным правилам, требуется вывести в стандартный поток вывода "[error]" (без кавычек). 
 
-run Id 349
+run Id 1758
 */
 
 #include "stdio.h"
@@ -57,17 +57,7 @@ int check_name(char *name);
 int read_var(char *strings, dict *dictionary, int *k);
 void free_tree(tree_node * node);
 int check_str(char *str);
-
-
-void read_arr_strings(int *count_arr, char *arr_strings[100])
-{
-    do {
-        (*count_arr) += 1;
-        arr_strings[*count_arr] = (char* )calloc(SIZE_STRING, sizeof(char));
-        gets(arr_strings[*count_arr]);
-
-    } while(strlen(arr_strings[*count_arr]) != 0);
-}
+void read_arr_strings(int *count_arr, char *arr_strings[SIZE_ARR_STRINGS]);
 
 
 int main(void)
@@ -79,6 +69,7 @@ int main(void)
     char *main_str_copy = NULL;
 
     int count_arr = -1;
+    
 	// чтение
     read_arr_strings(&count_arr, arr_strings);
 
@@ -152,6 +143,17 @@ int main(void)
     free(main_str_copy);
 
     return 0;
+}
+
+
+void read_arr_strings(int *count_arr, char *arr_strings[SIZE_ARR_STRINGS])
+{
+    do {
+        (*count_arr) += 1;
+        arr_strings[*count_arr] = (char* )calloc(SIZE_STRING, sizeof(char));
+        gets(arr_strings[*count_arr]);
+
+    } while(strlen(arr_strings[*count_arr]) != 0);
 }
 
 // чтение одного компонента выражения (операция или значение True или False)
