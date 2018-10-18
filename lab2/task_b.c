@@ -372,11 +372,11 @@ bool check_name(const char *name)
 int read_var(char *strings, dict *dictionary, int *k)
 {
     int err = -1;
-    char *name = (char* )malloc(20 * sizeof(char));
+    char *name = (char* )malloc(TOKEN_SIZE * sizeof(char));
     if (!name) {
         return err;
     }
-    char *val = (char* )malloc(20 * sizeof(char));
+    char *val = (char* )malloc(TOKEN_SIZE * sizeof(char));
     if (!val) {
         free(name);
         return err;
