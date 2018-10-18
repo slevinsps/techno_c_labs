@@ -24,12 +24,13 @@ run Id 1758
 */
 #include <stdbool.h>
 #include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>
-
+#include <float.h>
 #define SIZE_ARR_STRINGS 100
 #define SIZE_DICTIONARY 100
 #define SIZE_STRING 100
@@ -41,6 +42,9 @@ run Id 1758
 #define OR "or"
 #define AND "and"
 #define NOT "not"
+
+const char* true_value = "True";
+const char* false_value = "False";
 
 typedef struct tree_node_t {
     char *token;
@@ -64,6 +68,9 @@ int read_var(char *strings, dict *dictionary, int *k);
 void free_tree(tree_node * node);
 bool check_str(char *str);
 void read_arr_strings(int *count_arr, char **arr_strings);
+void change_varyables(char *main_str, char *input_string, dict *dictionary, int ind_dictionary);
+int read_in_dictionary(char **arr_strings, dict *dictionary, int *ind_dictionary, int count_arr);
+
 
 
 int main(void)
@@ -83,7 +90,7 @@ int main(void)
     tree_node * root = NULL;
     char *main_str_copy = NULL;
 
-    int count_arr = -1;
+    int count_arr = 0;
 
     // чтение
     read_arr_strings(&count_arr, arr_strings);
@@ -95,15 +102,9 @@ int main(void)
         return 0;
     }
 
-    int err = 0;
     int ind_dictionary = 0;
     // занесение в словарь
-    for(int i = 0; i < count_arr - 1; i++) {
-        err = read_var(arr_strings[i], dictionary, &ind_dictionary);
-        if (err == -1)
-            break;
-    }
-    if (err == -1) {
+    if (read_in_dictionary(arr_strings, dictionary, &ind_dictionary, count_arr) == -1) {
         printf("[error]");
     }
     else
@@ -120,20 +121,8 @@ int main(void)
             return 0;
         }
         main_str_copy = main_str;
-        int w = 0;
-        // замена переменных
-        while(strlen(input_string) != 0) {
-            for(int i = 0; i < ind_dictionary; i++) {
-                if (strncmp(input_string, dictionary[i].name, strlen(dictionary[i].name)) == 0) {
-                    input_string += strlen(dictionary[i].name);
-                    memcpy(main_str + w, dictionary[i].val, strlen(dictionary[i].val));
-                    w+=strlen(dictionary[i].val);
-                    break;
-                }
-            }
-            main_str[w++] = *input_string++;
-        }
-        main_str[w] = 0;
+
+        change_varyables(main_str, input_string, dictionary, ind_dictionary);
 
         if (!check_str(main_str)) {
             printf("[error]");
@@ -144,15 +133,15 @@ int main(void)
             if (root) {
                 int res = resolve_tree(root);
                 switch (res) {
-                case 1:
-                    printf("True");
-                    break;
-                case 0:
-                    printf("False");
-                    break;
-                default :
-                    printf("[error]");
-                    break;
+                    case 1:
+                        printf(true_value);
+                        break;
+                    case 0:
+                        printf(false_value);
+                        break;
+                    default :
+                        printf("[error]");
+                        break;
                 }
             } else
                 printf("[error]");
@@ -184,13 +173,43 @@ void read_arr_strings(int* count_arr, char** arr_strings)
         *count_arr = 0;
         return;
     }
+    (*count_arr)--;
     do {
         (*count_arr) += 1;
         arr_strings[*count_arr] = (char* )calloc(SIZE_STRING, sizeof(char));
-        gets(arr_strings[*count_arr]);
+        fgets(arr_strings[*count_arr],SIZE_STRING,stdin);
 
-    } while(strlen(arr_strings[*count_arr]) != 0);
+    } while(arr_strings[*count_arr][0] != '\n');
 }
+
+int read_in_dictionary(char **arr_strings, dict *dictionary, int *ind_dictionary, int count_arr) {
+    int err;
+    for(int i = 0; i < count_arr - 1; i++) {
+        err = read_var(arr_strings[i], dictionary, ind_dictionary);
+        if (err == -1)
+            break;
+    }
+}
+
+void change_varyables(char *main_str, char *input_string, dict *dictionary, int ind_dictionary)
+{
+    int w = 0;
+    // замена переменных
+    while(strlen(input_string) != 0) {
+        for(int i = 0; i < ind_dictionary; i++) {
+            if (strncmp(input_string, dictionary[i].name, strlen(dictionary[i].name)) == 0) {
+                input_string += strlen(dictionary[i].name);
+                memcpy(main_str + w, dictionary[i].val, strlen(dictionary[i].val));
+                w+=strlen(dictionary[i].val);
+                break;
+            }
+        }
+        main_str[w++] = *input_string++;
+    }
+
+    main_str[w] = 0;
+}
+
 
 // чтение одного компонента выражения (операция или значение True или False)
 char *read_token(char **input)
@@ -199,16 +218,14 @@ char *read_token(char **input)
         return "";
     while (isspace(**input)) ++*input;
 
-    char *true_var = "True";
-    char *false_var = "False";
 
-    if (strncmp(*input, true_var, strlen(true_var)) == 0) {
-        *input += strlen(true_var);
+    if (strncmp(*input, true_value, strlen(true_value)) == 0) {
+        *input += strlen(true_value);
         return "1";
     }
 
-    if (strncmp(*input, false_var, strlen(false_var)) == 0) {
-        *input += strlen(false_var);
+    if (strncmp(*input, false_value, strlen(false_value)) == 0) {
+        *input += strlen(false_value);
         return "0";
     }
 
@@ -258,28 +275,20 @@ tree_node *read_simple_expression(char **input)
 
 
 enum operation_priority {
-    xor_v = 1,
-    or_v = 1,
-    and_v,
-    not_v
+    xor_value = 1,
+    or_value = 1,
+    and_value,
+    not_value
 };
 
 // получение приоритета
 int get_priority(const char * binary_op)
 {
     enum operation_priority prior;
-    if (strncmp(binary_op, XOR, 3) == 0) {
-        return (prior = xor_v);
-    }
-    if (strncmp(binary_op, OR, 2) == 0) {
-        return (prior = or_v);
-    }
-    if (strncmp(binary_op, AND, 3) == 0) {
-        return (prior = and_v);
-    }
-    if (strncmp(binary_op, NOT, 3) == 0) {
-        return (prior = not_v);
-    }
+    if (strncmp(binary_op, XOR, 3) == 0){ return (prior = xor_value); }
+    if (strncmp(binary_op, OR, 2) == 0){ return (prior = or_value); }
+    if (strncmp(binary_op, AND, 3) == 0){ return (prior = and_value); }
+    if (strncmp(binary_op, NOT, 3) == 0){ return (prior = not_value); }
     return 0;
 }
 
@@ -292,14 +301,14 @@ tree_node *read_expression(int min_priority, char **input)
         return NULL;
     }
 
-    bool ans = false;
+    bool check_ans = false;
 
-    while(!ans) {
+    while(!check_ans) {
         char *op = read_token(input);
         int priority = get_priority(op);
         if (priority <= min_priority) {
             *input -= strlen(op);
-            ans = true;
+            check_ans = true;
         }
         else {
             tree_node *right_expr = read_expression(priority,input);
@@ -316,26 +325,19 @@ tree_node *read_expression(int min_priority, char **input)
 // решение выражения в дереве
 int resolve_tree(const tree_node *root)
 {
+    int err = -1;
     if (strlen(root->token) == 0)
-        return -1;
+        return err;
     if (root->left && root->right) {
         int a = resolve_tree(root->left);
         int b = resolve_tree(root->right);
         //printf("%d %d\n",a, b);
-        if (strncmp(root->token, XOR, 3) == 0) {
-            return a ^ b;
-        }
-        if (strncmp(root->token, OR, 2) == 0) {
-            return a | b;
-        }
-        if (strncmp(root->token, AND, 3) == 0) {
-            return a & b;
-        }
+        if (strncmp(root->token, XOR, 3) == 0){ return a ^ b; }
+        if (strncmp(root->token, OR, 2) == 0){ return a | b; }
+        if (strncmp(root->token, AND, 3) == 0){ return a & b; }
     } else if (root->left) {
         int a = resolve_tree(root->left);
-        if (strncmp(root->token, NOT, 3)== 0) {
-            return !a;
-        }
+        if (strncmp(root->token, NOT, 3)== 0){ return !a; }
     } else {
         return strtod(root->token, NULL);
     }
@@ -345,8 +347,8 @@ int resolve_tree(const tree_node *root)
 bool is_letter(char a)
 {
     if (a < 'a' || a > 'z')
-        return 0;
-    return 1;
+        return false;
+    return true;
 }
 
 // Проверка имени переменной согласно условиям
@@ -372,11 +374,11 @@ bool check_name(const char *name)
 int read_var(char *strings, dict *dictionary, int *k)
 {
     int err = -1;
-    char *name = (char* )malloc(TOKEN_SIZE * sizeof(char));
+    char *name = (char* )malloc(20 * sizeof(char));
     if (!name) {
         return err;
     }
-    char *val = (char* )malloc(TOKEN_SIZE * sizeof(char));
+    char *val = (char* )malloc(20 * sizeof(char));
     if (!val) {
         free(name);
         return err;
@@ -406,13 +408,12 @@ int read_var(char *strings, dict *dictionary, int *k)
     }
     val[j] = 0;
 
-    if (strncmp(val, "True", 4) != 0 && strncmp(val, "False", 5) != 0) {
+    if (strncmp(val, true_value, strlen(true_value)) != 0 && strncmp(val, false_value, strlen(false_value)) != 0) {
         return err;
     }
 
     while (isspace(*strings)) ++strings;
-    //printf("%s   %s \n", name, val);
-    //printf("%c\n",*strings );
+
     if (*strings != ';')
         return err;
     else {
@@ -447,18 +448,16 @@ void free_tree(tree_node * node)
 bool check_str(char *str)
 {
     char *input = str;
-    char *true_var = "True";
-    char *false_var = "False";
 
     while(strlen(input) !=  0) {
         int len1 = strlen(input);
         while (isspace(*input)) ++input;
-        if (strncmp(input, true_var, strlen(true_var)) == 0) {
-            input += strlen(true_var);
+        if (strncmp(input, true_value, strlen(true_value)) == 0) {
+            input += strlen(true_value);
         }
 
-        if (strncmp(input, false_var, strlen(false_var)) == 0) {
-            input += strlen(false_var);
+        if (strncmp(input, false_value, strlen(false_value)) == 0) {
+            input += strlen(false_value);
         }
 
         char *tokens[NUMBER_OPERATION] = { "and", "or", "not", "xor", "(", ")" };
