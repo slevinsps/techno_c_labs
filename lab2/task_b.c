@@ -24,7 +24,6 @@ run Id 1758
 */
 #include <stdbool.h>
 #include <stdio.h>
-#include <iostream>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -67,7 +66,7 @@ bool check_name(const char *name);
 int read_var(char *strings, dict *dictionary, int *k);
 void free_tree(tree_node * node);
 bool check_str(char *str);
-void read_arr_strings(int *count_arr, char **arr_strings);
+int read_arr_strings(int *count_arr, char **arr_strings);
 void change_varyables(char *main_str, char *input_string, dict *dictionary, int ind_dictionary);
 int read_in_dictionary(char **arr_strings, dict *dictionary, int *ind_dictionary, int count_arr);
 
@@ -93,10 +92,11 @@ int main(void)
     int count_arr = 0;
 
     // чтение
-    read_arr_strings(&count_arr, arr_strings);
-
-    if (count_arr == 0) {
+    if (read_arr_strings(&count_arr, arr_strings) == -1 || count_arr == 0) {
         printf("[error]");
+        for(int i = 0; i <= count_arr; i++) {
+            free(arr_strings[i]);
+        }
         free(dictionary);
         free(arr_strings);
         return 0;
@@ -134,10 +134,10 @@ int main(void)
                 int res = resolve_tree(root);
                 switch (res) {
                     case 1:
-                        printf(true_value);
+                        printf("True");
                         break;
                     case 0:
-                        printf(false_value);
+                        printf("False");
                         break;
                     default :
                         printf("[error]");
@@ -166,29 +166,38 @@ int main(void)
 }
 
 
-void read_arr_strings(int* count_arr, char** arr_strings)
+int read_arr_strings(int* count_arr, char** arr_strings)
 {
+    int err = 0;
     assert (arr_strings);
     if (!arr_strings) {
         *count_arr = 0;
-        return;
+        err = -1;
+        return err;
     }
     (*count_arr)--;
     do {
         (*count_arr) += 1;
         arr_strings[*count_arr] = (char* )calloc(SIZE_STRING, sizeof(char));
-        fgets(arr_strings[*count_arr],SIZE_STRING,stdin);
+        if (!arr_strings) {
+            err = -1;
+            break;
+        }
 
-    } while(arr_strings[*count_arr][0] != '\n');
+        gets(arr_strings[*count_arr]);
+
+    } while(strlen(arr_strings[*count_arr]) != 0);
+    return err;
 }
 
 int read_in_dictionary(char **arr_strings, dict *dictionary, int *ind_dictionary, int count_arr) {
-    int err;
+    int err = 0;
     for(int i = 0; i < count_arr - 1; i++) {
         err = read_var(arr_strings[i], dictionary, ind_dictionary);
         if (err == -1)
             break;
     }
+    return err;
 }
 
 void change_varyables(char *main_str, char *input_string, dict *dictionary, int ind_dictionary)
@@ -245,7 +254,12 @@ char *read_token(char **input)
 // чтение одинарного выражения
 tree_node *read_simple_expression(char **input)
 {
-    char *token = read_token(input);
+    char *token;
+    if (!input) {
+        token = "";
+    } else {
+        token = read_token(input);
+    }
 
     if (strlen(token) == 0) {
         return NULL;
